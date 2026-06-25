@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AWS資格対策ワークベンチ</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">AWS</span>
+          <div>
+            <h1>AWS資格対策ワークベンチ</h1>
+            <p>CLF/SAAに絞ったサービス理解と演習ログ</p>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <label class="select-label" for="trackSelect">
+            <span>対象</span>
+            <select id="trackSelect">
+              <option value="all">オリジナル CLF + SAA</option>
+              <option value="cloud-practitioner">CLF-C02</option>
+              <option value="solutions-architect">SAA-C03</option>
+              <option value="pdf-flashcards">PDF暗記 150問</option>
+            </select>
+          </label>
+          <button class="ghost-button" id="resetProgress" type="button">進捗リセット</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="left-rail" aria-label="学習メニュー">
+          <div class="segmented" role="tablist" aria-label="表示切替">
+            <button class="segment is-active" data-view-button="practice" role="tab" type="button">演習</button>
+            <button class="segment" data-view-button="library" role="tab" type="button">辞書</button>
+            <button class="segment" data-view-button="review" role="tab" type="button">復習</button>
+          </div>
+
+          <section class="stat-panel" aria-label="学習状況">
+            <div>
+              <span class="stat-value" id="answeredCount">0</span>
+              <span class="stat-label">回答</span>
+            </div>
+            <div>
+              <span class="stat-value" id="accuracyRate">0%</span>
+              <span class="stat-label">正答率</span>
+            </div>
+            <div>
+              <span class="stat-value" id="weakServiceCount">0</span>
+              <span class="stat-label">復習待ち</span>
+            </div>
+          </section>
+
+          <section class="timer-panel" aria-label="ポモドーロタイマー">
+            <div class="section-heading">
+              <h2>ポモドーロ</h2>
+              <span id="pomodoroCount">0</span>
+            </div>
+            <div class="timer-body">
+              <div class="timer-mode" id="timerModeLabel">集中</div>
+              <div class="timer-display" id="timerDisplay">25:00</div>
+              <div class="timer-status" id="timerStatus">25分集中して、5分休憩します。</div>
+              <div class="timer-modes" role="group" aria-label="タイマー種別">
+                <button class="timer-chip is-active" data-timer-mode="focus" type="button">25</button>
+                <button class="timer-chip" data-timer-mode="short" type="button">5</button>
+                <button class="timer-chip" data-timer-mode="long" type="button">15</button>
+              </div>
+              <div class="timer-custom" aria-label="タイマー時間">
+                <label for="focusMinutes">
+                  <span>集中</span>
+                  <input id="focusMinutes" type="number" min="1" max="180" step="1" inputmode="numeric" />
+                </label>
+                <label for="shortMinutes">
+                  <span>短休憩</span>
+                  <input id="shortMinutes" type="number" min="1" max="60" step="1" inputmode="numeric" />
+                </label>
+                <label for="longMinutes">
+                  <span>長休憩</span>
+                  <input id="longMinutes" type="number" min="1" max="120" step="1" inputmode="numeric" />
+                </label>
+              </div>
+              <div class="timer-actions">
+                <button class="primary-button" id="timerStart" type="button">開始</button>
+                <button class="secondary-button" id="timerPause" type="button">一時停止</button>
+                <button class="ghost-button" id="timerReset" type="button">リセット</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="control-panel" aria-label="検索と分類">
+            <label class="field-label" for="serviceSearch">サービス検索</label>
+            <input id="serviceSearch" type="search" placeholder="例: S3, IAM, Lambda" autocomplete="off" />
+
+            <label class="field-label" for="categoryFilter">カテゴリ</label>
+            <select id="categoryFilter">
+              <option value="all">すべて</option>
+            </select>
+
+            <label class="field-label" for="examDate">試験日</label>
+            <input id="examDate" type="date" />
+            <div class="exam-countdown" id="examCountdown">未設定</div>
+          </section>
+
+          <section class="mini-list" aria-label="重要サービス">
+            <div class="section-heading">
+              <h2>重点サービス</h2>
+              <span id="serviceCount">0</span>
+            </div>
+            <div id="focusServices"></div>
+          </section>
+        </aside>
+
+        <section class="content-area">
+          <section class="view is-visible" id="practiceView" data-view="practice" aria-labelledby="practiceTitle">
+            <div class="practice-toolbar">
+              <div>
+                <p class="eyebrow" id="questionDomain">Domain</p>
+                <h2 id="practiceTitle">問題演習</h2>
+              </div>
+            </div>
+
+            <article class="question-panel" aria-live="polite">
+              <div class="question-meta">
+                <span id="questionLevel">Foundation</span>
+                <span id="questionCert">CLF + SAA</span>
+              </div>
+              <p class="question-text" id="questionText"></p>
+              <div class="answer-list" id="answerList"></div>
+              <div class="answer-actions">
+                <button class="primary-button" id="submitAnswer" type="button" disabled hidden>回答する</button>
+                <button class="secondary-button" id="showHint" type="button">関連サービスを見る</button>
+              </div>
+              <div class="explanation" id="explanationBox" hidden></div>
+              <div class="confidence-panel" id="confidencePanel" hidden>
+                <div>
+                  <h3>自信度</h3>
+                  <p id="confidenceHint">解答後の自信度で、次の復習タイミングを決めます。</p>
+                </div>
+                <div class="confidence-grid" id="confidenceOptions"></div>
+              </div>
+              <div class="question-nav question-nav-bottom">
+                <button class="icon-button" id="prevQuestion" type="button" aria-label="前の問題">←</button>
+                <span id="questionCounter">1 / 1</span>
+                <button class="icon-button" id="nextQuestion" type="button" aria-label="次の問題">→</button>
+              </div>
+            </article>
+
+            <section class="service-strip" aria-label="関連サービス">
+              <div class="section-heading">
+                <h2>この問題のサービス</h2>
+                <span id="relatedCount">0</span>
+              </div>
+              <div class="strip-grid" id="relatedServices"></div>
+            </section>
+          </section>
+
+          <section class="view" id="libraryView" data-view="library" aria-labelledby="libraryTitle">
+            <div class="library-header">
+              <div>
+                <p class="eyebrow">Service map</p>
+                <h2 id="libraryTitle">サービス辞書</h2>
+              </div>
+              <button class="secondary-button" id="shuffleService" type="button">ランダム確認</button>
+            </div>
+            <div class="map-panel" id="categoryMap" aria-label="サービスカテゴリマップ"></div>
+            <div class="library-grid" id="serviceLibrary"></div>
+          </section>
+
+          <section class="view" id="reviewView" data-view="review" aria-labelledby="reviewTitle">
+            <div class="library-header">
+              <div>
+                <p class="eyebrow">Review queue</p>
+                <h2 id="reviewTitle">復習</h2>
+              </div>
+              <button class="secondary-button" id="clearMistakes" type="button">表示中を1時間後へ</button>
+            </div>
+            <div class="review-grid" id="reviewList"></div>
+          </section>
+        </section>
+
+        <aside class="service-drawer" aria-label="サービス概要">
+          <div class="drawer-header">
+            <p class="eyebrow">Service brief</p>
+            <button class="icon-button" id="favoriteService" type="button" aria-label="重要サービスに追加">☆</button>
+          </div>
+          <div id="serviceDetail"></div>
+        </aside>
+      </main>
+
+      <footer class="source-footer">
+        <span>参照元:</span>
+        <a href="https://aws.amazon.com/certification/certified-cloud-practitioner/">AWS Certified Cloud Practitioner</a>
+        <a href="https://aws.amazon.com/certification/certified-solutions-architect-associate/">AWS Certified Solutions Architect - Associate</a>
+        <a href="https://docs.aws.amazon.com/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02.html">CLF-C02 Exam Guide</a>
+        <a href="https://docs.aws.amazon.com/aws-certification/latest/cloud-practitioner-02/clf-02-in-scope-services.html">CLF-C02 In-Scope Services</a>
+        <a href="https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html">SAA-C03 Exam Guide</a>
+        <a href="https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/saa-03-in-scope-services.html">SAA-C03 In-Scope Services</a>
+        <a href="https://aws.amazon.com/certification/policies/general-information/">AWS Certification General Information</a>
+        <a href="https://aws.amazon.com/products/">AWS Cloud Services</a>
+        <span>問題セット: AWS CLF サービス名暗記 一問一答 v5（回答つき）</span>
+      </footer>
+    </div>
+
+    <script src="./pdf-flashcards.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
